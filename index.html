@@ -3,130 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chapter House | Laptop POS Pro</title>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <title>Chapter House | Ultimate POS</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Inter:wght@400;600;700&display=swap');
-        :root { --ios-blue: #007aff; --brand-gold: #d4af37; --bg: #f8fafc; }
-        body { font-family: 'Inter', sans-serif; background: #0f172a; margin: 0; padding: 15px; display: flex; justify-content: center; }
-        .main-container { background: white; width: 100%; max-width: 1100px; height: 90vh; border-radius: 25px; display: grid; grid-template-columns: 350px 1fr; overflow: hidden; }
-        .sidebar { background: #f1f5f9; padding: 20px; border-right: 1px solid #ddd; overflow-y: auto; }
-        .content { padding: 20px; display: flex; flex-direction: column; overflow: hidden; }
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Inter:wght@400;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background: #0f172a; color: #333; margin: 0; padding: 10px; }
+        .app-container { background: #f1f5f9; max-width: 1000px; margin: auto; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; height: 95vh; }
         
-        /* Scanner Box for Laptop */
-        #reader { width: 100%; height: 200px; background: black; border-radius: 15px; margin-bottom: 10px; border: 2px solid var(--brand-gold); }
-        
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 10px; box-sizing: border-box; }
-        .btn { background: var(--ios-blue); color: white; border: none; padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; }
-        
-        .stock-item { background: white; padding: 10px; margin-top: 5px; border-radius: 8px; border: 1px solid #e2e8f0; cursor: pointer; font-size: 13px; }
-        .stock-item:hover { border-color: var(--ios-blue); }
+        header { background: #1e293b; color: #d4af37; padding: 15px; text-align: center; font-family: 'Cinzel'; }
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; flex-grow: 1; overflow-y: auto; }
+        @media (max-width: 700px) { .main-grid { grid-template-columns: 1fr; } }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { text-align: left; padding: 10px; border-bottom: 2px solid #eee; }
-        td { padding: 10px; border-bottom: 1px solid #eee; }
-        .total { font-size: 30px; font-weight: 800; text-align: right; margin-top: auto; }
+        .card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        #reader { width: 100%; border-radius: 15px; background: #000; }
+        
+        input, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 10px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box; }
+        .btn-start { background: #007aff; color: white; font-weight: bold; border: none; cursor: pointer; }
+        .btn-add { background: #34c759; color: white; border: none; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; }
+        .total-box { font-size: 28px; font-weight: bold; text-align: right; padding: 15px; color: #1e293b; }
+        .status { text-align: center; font-size: 12px; font-weight: bold; color: #ef4444; }
     </style>
 </head>
 <body>
 
-<div class="main-container">
-    <div class="sidebar">
-        <h2 style="font-family: 'Cinzel'; color: var(--brand-gold); font-size: 20px;">CHAPTER HOUSE</h2>
-        <hr>
-        <h4>📦 Add Stock</h4>
-        <input type="text" id="bc" placeholder="Barcode (අංකය)">
-        <input type="text" id="nm" placeholder="Item Name (බඩුවේ නම)">
-        <input type="number" id="pr" placeholder="Price (Rs.)">
-        <button class="btn" onclick="addStock()">Save to Stock</button>
-        
-        <div id="stockDisplay" style="margin-top:20px;"></div>
-    </div>
+<div class="app-container">
+    <header><h1>CHAPTER HOUSE</h1></header>
 
-    <div class="content">
-        <div style="display:flex; justify-content: space-between;">
-            <h3>🛒 Billing Center</h3>
-            <button class="btn" style="width: auto; background: #ff9500;" onclick="startLaptopScanner()">START SCANNER</button>
+    <div class="main-grid">
+        <div class="card">
+            <h3>📷 Scanner</h3>
+            <div id="reader"></div>
+            <div id="status" class="status">Scanner Ready. Click Start.</div>
+            <button class="btn-start" onclick="startScanner()">START BACK CAMERA</button>
+            <button class="btn-start" style="background:#5856d6;" onclick="startScannerFront()">START FRONT CAMERA</button>
+            
+            <hr>
+            <h4>📦 Add to Stock</h4>
+            <input type="text" id="inBC" placeholder="Barcode Number">
+            <input type="text" id="inNM" placeholder="Item Name">
+            <input type="number" id="inPR" placeholder="Price (Rs.)">
+            <button class="btn-add" onclick="saveToStock()">SAVE ITEM</button>
+            
+            <div id="stockList" style="margin-top:10px; font-size: 12px;"></div>
         </div>
 
-        <div id="reader"></div>
-
-        <input type="text" id="searchItem" placeholder="🔍 ටයිප් කර සොයන්න (Search by name)..." onkeyup="searchAndAdd(this.value)">
-
-        <div style="flex-grow: 1; overflow-y: auto;">
-            <table id="billTable">
-                <thead><tr><th>Item</th><th>Price</th><th>Action</th></tr></thead>
-                <tbody id="billBody"></tbody>
-            </table>
+        <div class="card">
+            <h3>🛒 Today's Bill</h3>
+            <div style="height: 300px; overflow-y: auto;">
+                <table id="billTable">
+                    <thead><tr><th>Item</th><th>Price</th><th></th></tr></thead>
+                    <tbody id="billBody"></tbody>
+                </table>
+            </div>
+            <div class="total-box" id="totalDisplay">Rs. 0</div>
+            <button class="btn-start" style="background:#ff9500;" onclick="window.print()">PRINT BILL</button>
+            <button onclick="clearBill()" style="background:none; border:none; color:red; cursor:pointer;">Clear Bill</button>
         </div>
-
-        <div class="total" id="billTotal">Rs. 0</div>
-        <button class="btn" style="background: #34c759; padding: 15px; font-size: 18px;" onclick="window.print()">PRINT RECEIPT</button>
     </div>
 </div>
 
 <script>
-    let inventory = JSON.parse(localStorage.getItem('ch_lap_inv')) || [];
-    let bill = [];
+    let stock = JSON.parse(localStorage.getItem('ch_stock')) || [];
+    let currentBill = [];
+    let scanner;
 
-    function addStock() {
-        const barcode = document.getElementById('bc').value;
-        const name = document.getElementById('nm').value;
-        const price = document.getElementById('pr').value;
-        if(!barcode || !name || !price) return alert("Okkom purala danna");
+    // --- ස්කෑනර් එක පටන් ගැනීම ---
+    function startScanner(cameraMode = "environment") {
+        if(scanner) scanner.clear();
         
-        inventory.push({ bc: barcode, n: name, p: parseFloat(price) });
-        localStorage.setItem('ch_lap_inv', JSON.stringify(inventory));
+        scanner = new Html5Qrcode("reader");
+        const config = { fps: 15, qrbox: { width: 250, height: 150 } };
+
+        scanner.start({ facingMode: cameraMode }, config, (decodedText) => {
+            document.getElementById('status').innerText = "✅ SCANNED: " + decodedText;
+            document.getElementById('status').style.color = "green";
+            processItem(decodedText);
+        }).catch(err => {
+            document.getElementById('status').innerText = "⚠️ Error: " + err;
+            console.error(err);
+        });
+    }
+
+    function startScannerFront() { startScanner("user"); }
+
+    function processItem(code) {
+        const item = stock.find(i => i.bc === code);
+        if(item) {
+            currentBill.push(item);
+            updateUI();
+            // පොඩි vibration එකක් (Android වල පමණයි)
+            if(navigator.vibrate) navigator.vibrate(100);
+        } else {
+            document.getElementById('status').innerText = "❌ Item Not Found: " + code;
+            document.getElementById('status').style.color = "red";
+        }
+    }
+
+    function saveToStock() {
+        const bc = document.getElementById('inBC').value;
+        const nm = document.getElementById('inNM').value;
+        const pr = document.getElementById('inPR').value;
+        if(!bc || !nm || !pr) return alert("Fill all fields!");
+        
+        stock.push({ bc, nm, pr: parseFloat(pr) });
+        localStorage.setItem('ch_stock', JSON.stringify(stock));
         renderStock();
-        document.getElementById('bc').value=''; document.getElementById('nm').value=''; document.getElementById('pr').value='';
+        document.getElementById('inBC').value=''; document.getElementById('inNM').value=''; document.getElementById('inPR').value='';
     }
 
     function renderStock() {
-        const div = document.getElementById('stockDisplay');
-        div.innerHTML = "<b>Stock List:</b>";
-        inventory.forEach(i => {
-            div.innerHTML += `<div class="stock-item" onclick="addToBill('${i.bc}')">${i.n} - Rs.${i.p} <br><small>${i.bc}</small></div>`;
-        });
+        const div = document.getElementById('stockList');
+        div.innerHTML = "<b>Stock:</b> " + stock.map(i => i.nm).join(", ");
     }
 
-    function startLaptopScanner() {
-        const html5QrCode = new Html5Qrcode("reader");
-        const config = { fps: 10, qrbox: { width: 250, height: 150 } };
-        
-        html5QrCode.start({ facingMode: "user" }, config, (decodedText) => {
-            addToBill(decodedText);
-            // සද්දයක් හෝ වෙනසක් පෙන්වන්න
-            document.getElementById('reader').style.borderColor = "#34c759";
-            setTimeout(() => document.getElementById('reader').style.borderColor = "#d4af37", 500);
-        }).catch(err => alert("කැමරාව විවෘත කිරීමට නොහැක. HTTPS ලිපිනයක් පාවිච්චි කරන්න."));
-    }
-
-    function addToBill(code) {
-        const item = inventory.find(i => i.bc === code);
-        if(item) {
-            bill.push(item);
-            renderBill();
-        }
-    }
-
-    function searchAndAdd(val) {
-        if(val.length < 2) return;
-        const item = inventory.find(i => i.n.toLowerCase() === val.toLowerCase());
-        if(item) {
-            addToBill(item.bc);
-            document.getElementById('searchItem').value = '';
-        }
-    }
-
-    function renderBill() {
+    function updateUI() {
         const body = document.getElementById('billBody');
         body.innerHTML = '';
-        let tot = 0;
-        bill.forEach((s, idx) => {
-            tot += s.p;
-            body.innerHTML += `<tr><td>${s.n}</td><td>${s.p}</td><td><button onclick="bill.splice(${idx},1);renderBill()">X</button></td></tr>`;
+        let total = 0;
+        currentBill.forEach((item, index) => {
+            total += item.pr;
+            body.innerHTML += `<tr><td>${item.nm}</td><td>${item.pr}</td><td><button onclick="removeItem(${index})">x</button></td></tr>`;
         });
-        document.getElementById('billTotal').innerText = "Rs. " + tot;
+        document.getElementById('totalDisplay').innerText = "Rs. " + total;
+    }
+
+    function removeItem(index) {
+        currentBill.splice(index, 1);
+        updateUI();
+    }
+
+    function clearBill() {
+        currentBill = [];
+        updateUI();
     }
 
     renderStock();
