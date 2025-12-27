@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chapter House | Pro Scanner</title>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Inter:wght@400;600;700&display=swap');
+        :root { --ios-blue: #007aff; --brand-gold: #d4af37; --bg-dark: #0f172a; --glass: rgba(255, 255, 255, 0.95); }
+        html, body { margin: 0; padding: 0; height: 100vh; font-family: 'Inter', sans-serif; background: var(--bg-dark); color: #1e293b; overflow: hidden; }
+        #mainApp { display: flex; flex-direction: column; height: 100vh; padding: 10px; box-sizing: border-box; }
+        .dashboard { display: grid; grid-template-columns: 320px 1fr 280px; gap: 10px; flex-grow: 1; overflow: hidden; }
+        @media (max-width: 1000px) { .dashboard { grid-template-columns: 1fr; overflow-y: auto; } }
+        .glass-card { background: var(--glass); border-radius: 20px; padding: 15px; display: flex; flex-direction: column; box-shadow: 0 8px 25px rgba(0,0,0,0.3); overflow: hidden; }
+        .scroll { flex-grow: 1; overflow-y: auto; margin-top: 10px; }
+        #reader { width: 100%; min-height: 250px; background: #000; border-radius: 15px; border: 3px solid var(--brand-gold); }
+        input { width: 100%; padding: 10px; margin: 4px 0; border: 1px solid #ddd; border-radius: 10px; font-size: 13px; box-sizing: border-box; }
+        .btn-main { background: var(--ios-blue); color: white; border: none; padding: 12px; border-radius: 12px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 5px; }
+        .total-box { border-top: 2px solid #ddd; padding-top: 10px; text-align: right; font-size: 26px; font-weight: 800; }
+        .stock-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+        #scanMsg { text-align: center; font-weight: bold; margin-top: 5px; color: #34c759; }
+    </style>
+</head>
+<body>
+
+<div id="mainApp">
+    <header style="text-align:center; padding-bottom:10px;">
+        <h1 style="font-family:'Cinzel'; color:var(--brand-gold); margin:0; font-size:22px;">CHAPTER HOUSE</h1>
+    </header>
+
+    <div class="dashboard">
+        <div class="glass-card">
+            <h3 style="margin:0; font-size:15px;">📦 Stock List</h3>
+            <div style="background:#f1f5f9; padding:10px; border-radius:15px; margin-top:10px;">
+                <input type="text" id="invBC" placeholder="Barcode Number">
+                <input type="text" id="invName" placeholder="Item Name">
+                <input type="number" id="invPrice" placeholder="Price (Rs.)">
+                <button class="btn-main" onclick="saveStock()">ADD TO STOCK</button>
+            </div>
+            <div class="scroll" id="stockList"></div>
+        </div>
+
+        <div class="glass-card">
+            <h3 style="margin:0; font-size:15px; margin-bottom: 10px;">📷 Camera Scanner</h3>
+            <div id="reader"></div>
+            <div id="scanMsg">Scanner Off</div>
+            <button id="startBtn" class="btn-main" style="background:#ff9500" onclick="initScanner()">OPEN CAMERA</button>
+            
+            <div class="scroll">
+                <table id="billTable" style="width:100%; border-collapse:collapse;">
+                    <thead><tr style="text-align:left; background:#eee;"><th>Item</th><th>Price</th><th>Action</th></tr></thead>
+                    <tbody id="billBody"></tbody>
+                </table>
+            </div>
+            <div class="total-box" id="billTotal">Rs. 0</div>
+            <button class="btn-main" style="background:#34c759" onclick="window.print()">PRINT BILL</button>
+        </div>
+
+        <div class="glass-card">
+            <h3 style="margin:0; font-size:15px;">📊 Monthly Sales</h3>
+            <div class="scroll" id="monthlyStats"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let inventory = JSON.parse(localStorage.getItem('ch_v9_inv')) || [];
+    let sales = JSON.parse(localStorage.getItem('ch_v9_sales')) || [];
+    let html5QrCode;
+
+    function initScanner() {
+        document.getElementById('startBtn').style.display = 'none';
+        document.getElementById('scanMsg').innerText = "Starting Camera...";
+        
+        html5QrCode = new Html5Qrcode("reader");
+        
+        const qrCodeSuccessCallback = (decodedText) => {
+            // හඳුනාගත් විට ක්‍රියාත්මක වන කොටස
+            const item = inventory.find(i => i.bc === decodedText);
+            if (item) {
+                sales.push({ id: Date.now(), d: new Date().toISOString().split('T')[0], n: item.n, p: item.p });
+                localStorage.setItem('ch_v9_sales', JSON.stringify(sales));
+                renderUI();
+                alert("Added: " + item.n); // හඳුනාගත් බව දැන ගැනීමට
+            } else {
+                document.getElementById('scanMsg').innerText = "Unknown Code: " + decodedText;
+                document.getElementById('scanMsg').style.color = "red";
+            }
+        };
+
+        const config = { fps: 10, qrbox: { width: 250, height: 200 } };
+
+        // පසුපස කැමරාවට බල කිරීම
+        html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
+        .catch(err => {
+            alert("Camera Error: " + err);
+            document.getElementById('startBtn').style.display = 'block';
+        });
+    }
+
+    function saveStock() {
+        const bc = document.getElementById('invBC').value, n = document.getElementById('invName').value, p = document.getElementById('invPrice').value;
+        if(!bc || !n || !p) return alert("Fill all data");
+        inventory.push({ bc, n, p: parseFloat(p) });
+        localStorage.setItem('ch_v9_inv', JSON.stringify(inventory));
+        renderUI();
+        document.getElementById('invBC').value = ''; document.getElementById('invName').value = ''; document.getElementById('invPrice').value = '';
+    }
+
+    function renderUI() {
+        const sList = document.getElementById('stockList'); sList.innerHTML = '';
+        inventory.forEach(i => {
+            sList.innerHTML += `<div class="stock-item" onclick="alert('Manual code: '+ '${i.bc}')"><b>${i.n}</b> - Rs.${i.p}<br><small>${i.bc}</small></div>`;
+        });
+
+        const bBody = document.getElementById('billBody'); bBody.innerHTML = '';
+        let total = 0;
+        sales.forEach(s => {
+            if(s.d === new Date().toISOString().split('T')[0]) {
+                total += s.p;
+                bBody.innerHTML += `<tr><td>${s.n}</td><td>${s.p}</td><td><button onclick="deleteSale(${s.id})">X</button></td></tr>`;
+            }
+        });
+        document.getElementById('billTotal').innerText = "Rs. " + total;
+    }
+
+    function deleteSale(id) {
+        sales = sales.filter(s => s.id !== id);
+        localStorage.setItem('ch_v9_sales', JSON.stringify(sales));
+        renderUI();
+    }
+</script>
+</body>
+</html>
